@@ -40,3 +40,7 @@ Note that this template is for demonstration purposes only and may not be suitab
     - `Azure Subscription`: The Azure Subscription where your resources will be deployed.
     > NOTE: This may take a while to complete as it executes three commands: `azd package` (builds a deployable copy of your application), `azd provision` (provisions Azure resources), and `azd deploy` (deploys application code). You will see a progress indicator as it packages, provisions and deploys your application.
 1. [Optional] Make changes to app.py and run `azd deploy` again to update your changes.
+
+## Additional notes
+
+The `sample.bicep` file is available in the main directory of this repo to provide a single template that includes all of the resources and properties in the AZD template. Information and details have been added in-line in that file to provide more context on the various properties including why you should configure them as described.

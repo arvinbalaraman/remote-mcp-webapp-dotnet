@@ -3,6 +3,7 @@
 @maxLength(64)
 param webAppName string = 'webApp-${uniqueString(resourceGroup().id)}'
 
+// The following list of regions are the Azure regions that support Availability Zones. Enabling Availability Zones is recommended as it provides increased resiliency for your App Service apps. If you need to use a region that is not listed here, you won't be able to use Availability Zones. To learn more, see https://learn.microsoft.com/azure/reliability/reliability-app-service?pivots=premium.
 @description('Location for all resources. This region must support Availability Zones.')
 @allowed([
   'brazilsouth'
@@ -44,7 +45,7 @@ param webAppName string = 'webApp-${uniqueString(resourceGroup().id)}'
 param location string = 'eastus'
 
 @description('The SKU of App Service Plan.')
-param sku string = 'P1v3'
+param sku string = 'P1v3' // P1v3 is from the Premium v3 SKU offering. This is one of the production SKU offerings. You can resize this option based on your needs. Each of the SKUs have different prices and may have different features available. To learn more, see https://azure.microsoft.com/pricing/details/app-service/windows/?msockid=0a6035fcc17b67023fcf2079c0386601.
 
 @description('OS of your Azure App Service plan.')
 @allowed([
@@ -55,10 +56,10 @@ param sku string = 'P1v3'
 param appServicePlanHostingOS string = 'Linux'
 
 @description('The Runtime stack of current web app')
-param linuxFxVersion string = 'PYTHON|3.12'
+param linuxFxVersion string = 'PYTHON|3.12' // Update this to align with your app's runtime. Using the Azure CLI, run "az webapp list-runtimes" to view the latest languages and supported versions. If the runtime your application requires isn't supported in the built-in images, you can deploy it with a custom container.
 
 @description('The allowed IP/CIDR defines what is allowed to access the app. This should be restricted to your client IP for example. Leaving it as the default makes your app publicly accessible.')
-param allowedIps string = '0.0.0.0/0'
+param allowedIps string = '0.0.0.0/0' // We've left this open to the internet for this sample to prevent access issues when creating an app from this template. However, for your application, you should set access restrictions based on a least privilege model to ensure only those that need access can access your app. To learn more, see https://learn.microsoft.com/azure/app-service/networking-features#access-restrictions.
 
 var appUserManagedIdentityName = 'umi-${webAppName}'
 var appServicePlanName = 'AppServicePlan-${webAppName}'
@@ -70,6 +71,8 @@ var logAnalyticsName = 'logAnalytics-${webAppName}'
 var diagnosticSettingName = 'diagnosticSetting-${webAppName}'
 var appInsightName = 'appInsights-${webAppName}'
 
+// A virtual network is created to use the virtual network integration feature, which enables your app to make outbound requests into an Azure virtual network. To learn more about virtual network integrations, see https://learn.microsoft.com/azure/app-service/networking-features#regional-vnet-integration.
+// To manange inbound requests, review the private endpoint feature at https://learn.microsoft.com/azure/app-service/networking-features#private-endpoint. Private endpoint configuration is not provided in this sample but is certainly a recommended feature if you need to connect secure inbound connections to your app.
 resource virtualNetwork 'Microsoft.Network/virtualNetworks@2024-03-01' = {
   name: vnetName
   location: location
@@ -88,7 +91,7 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2024-03-01' = {
             {
               name: 'delegation'
               properties: {
-                serviceName: 'Microsoft.Web/serverFarms'
+                serviceName: 'Microsoft.Web/serverFarms' // The subnet is delegated to this value to let the subnet know it is being used for App Service virtual network integration.
               }
             }
           ]
@@ -98,6 +101,7 @@ resource virtualNetwork 'Microsoft.Network/virtualNetworks@2024-03-01' = {
   }
 }
 
+// Managed identity is used because if needed, it wil allow your app to easily access other Microsoft Entra protected resources such as Azure Key Vault. As a best practice, you should enable and configure a managed identity following a least privilege model. To learn more, see https://learn.microsoft.com/azure/app-service/overview-managed-identity?tabs=arm%2Chttp.
 resource appUserManagedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-07-31-preview' = {
   name: appUserManagedIdentityName
   location: location
@@ -108,14 +112,14 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2024-04-01' = {
   location: location
   sku: {
     name: sku
-    capacity: 3
+    capacity: 3 // This is the number of instances for this App Service plan. It is set to 3 because the zoneRedundancy property is enabled, which means you intend to use Availability Zones. If you enable Availability Zones, you must have a minimum of 3 instances.
   }
   properties: {
-    reserved: appServicePlanHostingOS == 'Linux' ? true : false
+    reserved: appServicePlanHostingOS == 'Linux' ? true : false // Set this to "true" for Linux or "false" for Windows. We've included logic here so that you don't have to set this yourself. The property will be set based on your selection in the "appServicePlanHostingOS" parameter. 
     hyperV: appServicePlanHostingOS == 'Windows Container' ? true : false
-    zoneRedundant: true
-    elasticScaleEnabled: true
-    maximumElasticWorkerCount: 30
+    zoneRedundant: true // This property enables Availability Zones for your App Service plan. All apps in this plan will be zone redundant, meaning the instances will be distributed across the maximum number of available zones. This feature can only be enabled if you are in a region that supports Availability Zones and if you are placed on an App Service scale unit that supports Availability Zones. Enabling this property will enforce a minimum instance count of 3 instances, which is why the capacity above is set to 3. To learn more, see https://learn.microsoft.com/azure/reliability/reliability-app-service?pivots=premium.
+    elasticScaleEnabled: true // This feature enables automatic scaling. This ensures your app scales to meet the demand of your HTTP traffic. If you enable this feature, you don't need to set scaling rules. To learn more, see https://learn.microsoft.com/azure/app-service/manage-automatic-scaling?tabs=azure-portal.
+    maximumElasticWorkerCount: 30 // This property is the highest number of instances that your App Service Plan can increase to based on incoming HTTP requests. For Premium v2 & v3 plans, you can set a maximum burst of up to 30 instances. The maximum burst must be equal to or greater than the number of workers specified for the App Service Plan. To learn more, see https://learn.microsoft.com/azure/reliability/reliability-app-service?pivots=premium.
   }
 }
 
@@ -124,22 +128,22 @@ resource webApp 'Microsoft.Web/sites@2024-04-01' = {
   location: location
   properties: {
     serverFarmId: appServicePlan.id
-    virtualNetworkSubnetId: virtualNetwork.properties.subnets[0].id
-    vnetRouteAllEnabled: true
-    vnetBackupRestoreEnabled: true
-    vnetContentShareEnabled: true
-    vnetImagePullEnabled: true
-    httpsOnly: true
-    endToEndEncryptionEnabled: true
+    virtualNetworkSubnetId: virtualNetwork.properties.subnets[0].id // Enables virtual network integration in the subnet that was created in this template.
+    vnetRouteAllEnabled: true // Enables application routing. Application routing defines what traffic is routed from your app and into the virtual network. We recommend that you use the vnetRouteAllEnabled site setting to enable routing of all traffic rather than the existing app setting WEBSITE_VNET_ROUTE_ALL so that you can audit the behavior with a Azure Policy. To learn more, see https://learn.microsoft.com/azure/app-service/configure-vnet-integration-routing#configure-application-routing.
+    vnetBackupRestoreEnabled: true // Enables configuration routing - backup/restore. This setting routes backup traffic through the virtual network. To learn more, see https://learn.microsoft.com/azure/app-service/configure-vnet-integration-routing#backuprestore.
+    vnetContentShareEnabled: true // Enables configuration routing - content share. This setting routes content share through the virtual network. To learn more, see https://learn.microsoft.com/azure/app-service/configure-vnet-integration-routing#content-share.
+    vnetImagePullEnabled: true // Enables configuration routing - container image pull. This setting routes container image pull through the virtual network. To learn more, see https://learn.microsoft.com/azure/app-service/configure-vnet-integration-routing#backuprestore.
+    httpsOnly: true // Enforces HTTPS and redirects all HTTP traffic to HTTPS.
+    endToEndEncryptionEnabled: true // Prevents TLS termination of incoming HTTPS requests. Encrypts intra-cluster traffic between App Service front-ends and workers running application workloads, so TLS doesn't get terminated on the front-ends. https://techcommunity.microsoft.com/blog/appsonazureblog/end-to-end-e2e-tls-encryption-preview-on-linux-multi-tenant-app-service-resource/3976646  
     autoGeneratedDomainNameLabelScope: 'TenantReuse'
-    sshEnabled: false
-    ipMode: 'IPv4AndIPv6'
-    publicNetworkAccess: 'Enabled'
+    sshEnabled: false // Enables SSH access to your app. https://learn.microsoft.com/azure/app-service/configure-linux-open-ssh-session?pivots=container-linux
+    ipMode: 'IPv4AndIPv6' // Defines what kind of addresses you can send traffic to. https://azure.github.io/AppService/2024/11/08/Announcing-Inbound-IPv6-support.html.
+    publicNetworkAccess: 'Enabled' // Enables or disables public access to your app. This setting should be used with access restrictions to ensure only principals that need access can access your app. To learn more, see https://learn.microsoft.com/azure/app-service/app-service-ip-restrictions?tabs=azurecli.
     siteConfig: {
       linuxFxVersion: linuxFxVersion
-      minTlsVersion: '1.3'
-      minTlsCipherSuite: 'TLS_AES_256_GCM_SHA384'
-      scmMinTlsVersion: '1.3'
+      minTlsVersion: '1.3' // TLS 1.3 is the latest version. This setting defines the minimum TLS encryption version required by clients connecting to your app. To learn more, see https://learn.microsoft.com/azure/app-service/overview-tls.
+      minTlsCipherSuite: 'TLS_AES_256_GCM_SHA384' // To learn more, see https://learn.microsoft.com/azure/app-service/overview-tls#minimum-tls-cipher-suite.
+      scmMinTlsVersion: '1.3' // TLS 1.3 is the latest version. This setting defines the minimum TLS encryption version required by clients connecting to the SCM/Kudu site of your app. To learn more, see https://learn.microsoft.com/azure/app-service/overview-tls.
       ftpsState: 'Disabled'
       http20Enabled: true
       remoteDebuggingEnabled: false
