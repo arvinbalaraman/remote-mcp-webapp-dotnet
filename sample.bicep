@@ -144,11 +144,11 @@ resource webApp 'Microsoft.Web/sites@2024-04-01' = {
       minTlsVersion: '1.3' // TLS 1.3 is the latest version. This setting defines the minimum TLS encryption version required by clients connecting to your app. To learn more, see https://learn.microsoft.com/azure/app-service/overview-tls.
       minTlsCipherSuite: 'TLS_AES_256_GCM_SHA384' // To learn more, see https://learn.microsoft.com/azure/app-service/overview-tls#minimum-tls-cipher-suite.
       scmMinTlsVersion: '1.3' // TLS 1.3 is the latest version. This setting defines the minimum TLS encryption version required by clients connecting to the SCM/Kudu site of your app. To learn more, see https://learn.microsoft.com/azure/app-service/overview-tls.
-      ftpsState: 'Disabled'
-      http20Enabled: true
-      remoteDebuggingEnabled: false
+      ftpsState: 'Disabled' // FTPS state is disabled to block all FTP connections and prevent unauthorized access to your app. To learn more, see https://learn.microsoft.com/azure/app-service/deploy-ftp.
+      http20Enabled: true // Enables clients to connect to the app over HTTP/2.
+      remoteDebuggingEnabled: false // Remote debugging is disabled to prevent unauthorized access to the app.
       antivirusScanEnabled: true
-      ipSecurityRestrictions: [
+      ipSecurityRestrictions: [ // The block is used to configure the app's access restrictions and can be modified by updating the allowedIps parameter. To learn more, see https://learn.microsoft.com/azure/app-service/networking-features#access-restrictions.
         {
           ipAddress: allowedIps
           action: 'Allow'
@@ -156,9 +156,9 @@ resource webApp 'Microsoft.Web/sites@2024-04-01' = {
           name: 'Allowed IPs'
         }
       ]
-      ipSecurityRestrictionsDefaultAction: 'Deny'
-      scmIpSecurityRestrictionsDefaultAction: 'Deny'
-      scmIpSecurityRestrictionsUseMain: true
+      ipSecurityRestrictionsDefaultAction: 'Deny' // Sets the default access restriction to deny all traffic. Only explicitly defined IPs will be able to access the app. To learn more, see https://learn.microsoft.com/azure/app-service/networking-features#access-restrictions.
+      scmIpSecurityRestrictionsDefaultAction: 'Deny' // Sets the default access restriction for the SCM/Kudu site to deny all traffic. Only explicitly defined IPs will be able to access the app. To learn more, see https://learn.microsoft.com/azure/app-service/networking-features#access-restrictions.
+      scmIpSecurityRestrictionsUseMain: true // Copies the access restrictions set for the main site. If you need to further restrict access to the SCM site, you should set this to false and define another set of access restrictions using the scmIpSecurityRestrictions property.
     }
   }
   identity: {
@@ -170,7 +170,7 @@ resource webApp 'Microsoft.Web/sites@2024-04-01' = {
   resource appSettings 'config' = {
     name: 'appsettings'
     properties: {
-      SCM_DO_BUILD_DURING_DEPLOYMENT: 'true'
+      SCM_DO_BUILD_DURING_DEPLOYMENT: 'true' // This app setting is provided as an example and may not apply to all apps. To learn more, see https://learn.microsoft.com/azure/app-service/reference-app-settings.
     }
   }
   dependsOn: [
@@ -178,6 +178,7 @@ resource webApp 'Microsoft.Web/sites@2024-04-01' = {
   ]
 }
 
+// App Service provides basic authentication for FTP and WebDeploy clients to connect to it by using deployment credentials. These APIs are great for browsing your site’s file system, uploading drivers and utilities, and deploying with MsBuild. However, enterprises often require more secure deployment methods than basic authentication, such as Microsoft Entra ID authentication. For that reason, it's recommended to disable these features. To learn more, see https://learn.microsoft.com/azure/app-service/configure-basic-auth-disable.
 resource ftpPolicy 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2024-04-01' = {
   name: 'ftp'
   location: location
@@ -188,6 +189,7 @@ resource ftpPolicy 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2024-
   }
 }
 
+// App Service provides basic authentication for FTP and WebDeploy clients to connect to it by using deployment credentials. These APIs are great for browsing your site’s file system, uploading drivers and utilities, and deploying with MsBuild. However, enterprises often require more secure deployment methods than basic authentication, such as Microsoft Entra ID authentication. For that reason, it's recommended to disable these features. To learn more, see https://learn.microsoft.com/azure/app-service/configure-basic-auth-disable.
 resource scmPolicy 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2024-04-01' = {
   name: 'scm'
   location: location
@@ -198,6 +200,7 @@ resource scmPolicy 'Microsoft.Web/sites/basicPublishingCredentialsPolicies@2024-
   }
 }
 
+// Creates a log analytics workspace to stream logs to. To learn more, see https://learn.microsoft.com/azure/app-service/monitor-app-service.
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: logAnalyticsName
   location: location
@@ -214,6 +217,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2023-09
   }
 }
 
+// This resource defines the diagnostic settings that are enabled and sends them to the log analytics workspace. In this example, all available settings are enabled. To learn more, see https://learn.microsoft.com/azure/app-service/troubleshoot-diagnostic-logs.
 resource setting 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: diagnosticSettingName
   scope: webApp
@@ -266,6 +270,7 @@ resource setting 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   }
 }
 
+// This resource creates an App Service slot for your app. It includes the same properties and configurations as the main site. Whenever possible, when you deploy a new production build, use deployment slots to test and validate your build before pushing to production. To learn more, see https://learn.microsoft.com/azure/app-service/deploy-staging-slots.
 resource webAppSlot 'Microsoft.Web/sites/slots@2024-04-01' = {
   parent: webApp
   name: 'stage'
