@@ -7,43 +7,6 @@ param name string
 
 @minLength(1)
 @description('Location for all resources. This region must support Availability Zones.')
-@allowed([
-  'brazilsouth'
-  'canadacentral'
-  'centralus'
-  'eastus'
-  'eastus2'
-  'southcentralus'
-  'westus2'
-  'westus3'
-  'mexicocentral'
-  'francecentral'
-  'italynorth'
-  'germanywestcentral'
-  'norwayeast'
-  'northeurope'
-  'uksouth'
-  'westeurope'
-  'swedencentral'
-  'switzerlandnorth'
-  'polandcentral'
-  'spaincentral'
-  'qatarcentral'
-  'uaenorth'
-  'israelcentral'
-  'southafricanorth'
-  'australiaeast'
-  'centralindia'
-  'japaneast'
-  'japanwest'
-  'southeastasia'
-  'eastasia'
-  'koreacentral'
-  'newzealandnorth'
-  'usgovvirginia'
-  'chinanorth3'
-  'ussecwestcentral'
-])
 param location string
 
 var resourceToken = toLower(uniqueString(subscription().id, name, location))

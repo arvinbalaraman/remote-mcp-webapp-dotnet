@@ -1,46 +1,138 @@
-# AZD Template for App Service web app following best practices
+# Model Context Protocol (MCP) Server - .NET Implementation
 
-This template deploys a simple Flask web application to Azure App Service. The App Service is created following best practices and security recommendations provided by the Azure App Service product group. You may choose to enable/disable certain features based on your requirements.
+This project contains a .NET web app implementation of a Model Context Protocol (MCP) server. The application is designed to be deployed to Azure App Service.
 
-Because the App Service is created following best practices, it includes features such as:
+The MCP server provides an API that follows the Model Context Protocol specification, allowing AI models to request additional context during inference.
 
-- Virtual Network Integration
-- Managed Identity
-- Logging and Monitoring
-- Slot Deployment
-- And more!
+## Key Features
 
-Note that this template is for demonstration purposes only and may not be suitable for production use. You should review the settings and configurations to ensure they meet your requirements. Pay attention to the ipSecurityRestrictions setting in the template, as it restricts access to the App Service to a specific IP address range. You may need to update this setting to allow access from your IP address or network.
+- Complete implementation of the MCP protocol in C#/.NET using [MCP csharp-sdk](https://github.com/modelcontextprotocol/csharp-sdk)
+- Azure App Service integration
+- Custom tools support
 
-## Usage
+## Project Structure
 
-1. Install AZD.
-1. Login to azd. Only required once per-install.
+- `src/` - Contains the main C# project files
+  - `Program.cs` - The entry point for the MCP server
+  - `Tools/` - Contains custom tools that can be used by models via the MCP protocol
+    - `MultiplicationTool.cs` - Example tool that performs multiplication operations
+    - `TemperatureConverterTool.cs` - Tool for converting between Celsius and Fahrenheit
+    - `WeatherTools.cs` - Tools for retrieving weather forecasts and alerts
+- `infra/` - Contains Azure infrastructure as code using Bicep
+  - `main.bicep` - Main infrastructure definition
+  - `resources.bicep` - Resource definitions
+  - `main.parameters.json` - Parameters for deployment
 
-    ```bash
-    azd auth login
-    ```
+## Prerequisites
 
-1. Run the following command to initialize the project.
+- [Azure Developer CLI](https://aka.ms/azd)
+- [.NET 9 SDK](https://dotnet.microsoft.com/download)
+- For local development with VS Code:
+  - [Visual Studio Code](https://code.visualstudio.com/)
+- MCP C# SDK:
+  ```bash
+  dotnet add package ModelContextProtocol --prerelease
+  ```
 
-    ```bash
-    azd init --template Azure-Samples/app-service-web-app-best-practice
-    ```
+## Local Development
 
-    This command will clone the code to your current folder and prompt you for required information.
-    - `Environment Name`: This will be used as a prefix for the resource group that will be created to hold all Azure resources. This name should be unique within your Azure subscription.
-1. Run the following command to build a deployable copy of your application, provision the template's infrastructure to Azure and also deploy the application code to those newly provisioned resources.
+### Run the Server Locally
 
-    ```bash
-    azd up
-    ```
+1. Clone this repository
+2. Navigate to the project directory
+   ```bash
+   cd src
+   ```
+3. Run the project:
+   ```bash
+   dotnet run
+   ```
+4. The MCP server will be available at `https://localhost:5269`
+5. When you're done, press Ctrl+C in the terminal to stop the app
 
-    This command will prompt you for the following information:
-    - `Azure Location`: The Azure location where your resources will be deployed.
-    - `Azure Subscription`: The Azure Subscription where your resources will be deployed.
-    > NOTE: This may take a while to complete as it executes three commands: `azd package` (builds a deployable copy of your application), `azd provision` (provisions Azure resources), and `azd deploy` (deploys application code). You will see a progress indicator as it packages, provisions and deploys your application.
-1. [Optional] Make changes to app.py and run `azd deploy` again to update your changes.
+### Connect to the Local MCP Server
 
-## Additional notes
+#### Using VS Code - Copilot Agent Mode
 
-The `sample.bicep` file is available in the main directory of this repo to provide a single template that includes all of the resources and properties in the AZD template. Information and details have been added in-line in that file to provide more context on the various properties including why you should configure them as described.
+1. **Add MCP Server** from command palette and add the URL to your running server's SSE endpoint:
+   ```
+   http://0.0.0.0:5269/sse
+   ```
+2. **List MCP Servers** from command palette and start the server
+3. In Copilot chat agent mode, enter a prompt to trigger the tool:
+   ```
+   Multiply 3423 and 5465
+   ```
+4. When prompted to run the tool, consent by clicking **Continue**
+
+You can ask things like:
+- What's the weather forecast in NYC?
+- Are there any weather alerts in California?
+
+#### Using MCP Inspector
+
+1. In a **new terminal window**, install and run MCP Inspector:
+   ```bash
+   npx @modelcontextprotocol/inspector
+   ```
+2. CTRL+click the URL displayed by the app (e.g. http://0.0.0.0:5173/#resources)
+3. Set the transport type to `SSE`
+4. Set the URL to your running server's SSE endpoint and **Connect**:
+   ```
+   http://0.0.0.0:5269/sse
+   ```
+5. **List Tools**, click on a tool, and **Run Tool**
+
+## Deploy to Azure
+
+1. Login to Azure:
+   ```bash
+   azd auth login
+   ```
+
+2. Initialize your environment:
+   ```bash
+   azd env new
+   ```
+
+3. Deploy the application:
+   ```bash
+   azd up
+   ```
+
+   This will:
+   - Build the .NET application
+   - Provision Azure resources defined in the Bicep templates
+   - Deploy the application to Azure App Service
+
+### Connect to Remote MCP Server
+
+#### Using MCP Inspector
+Use the web app's URL:
+```
+https://<webappname>.azurewebsites.net/sse
+```
+
+#### Using VS Code - GitHub Copilot
+Follow the same process as with the local app, but use your App Service URL:
+```
+https://<webappname>.azurewebsites.net/sse
+```
+
+## Clean up resources
+
+When you're done working with your app and related resources, you can use this command to delete the function app and its related resources from Azure and avoid incurring any further costs:
+
+```shell
+azd down
+```
+
+## Custom Tools
+
+The project includes a sample tool in the `Tools` directory:
+- `MultiplicationTool.cs` - A simple tool that demonstrates how to implement MCP tools
+
+To add new tools:
+1. Create a new class in the `Tools` directory
+2. Implement the MCP tool interface
+3. Register the tool in `Program.cs`
