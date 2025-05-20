@@ -27,7 +27,7 @@ To run the server locally:
 dotnet run --project McpServer.csproj
 ```
 
-The server will be available at http://localhost:5269.
+The server will be available at http://localhost:5000.
 
 ### Testing the Available Tools
 
