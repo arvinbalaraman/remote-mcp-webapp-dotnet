@@ -1,11 +1,11 @@
 # MCP Server with Multiple Tools
 
-This is a Model Context Protocol (MCP) server that can be hosted on Azure App Service. The server supports Server-Sent Events (SSE) and implements several useful tools including multiplication, temperature conversion, and weather data.
+This is a Model Context Protocol (MCP) server that can be hosted on Azure App Service. The server supports streamable HTTP transport and implements several useful tools including multiplication, temperature conversion, and weather data.
 
 ## Features
 
 - MCP server implementation using the C# SDK
-- Support for Server-Sent Events (SSE)
+- Support for streamable HTTP transport
 - CORS enabled for browser clients
 - Multiple useful tools:
   - Multiplication tool for number calculations
@@ -31,7 +31,7 @@ The server will be available at http://localhost:5000.
 
 ### Testing the Available Tools
 
-You can use any MCP client that supports SSE to connect to the server and use the following tools:
+You can use any MCP client that supports HTTP transport to connect to the server and use the following tools:
 
 #### Multiplication Tool
 The multiplication tool takes two parameters:

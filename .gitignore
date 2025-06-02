@@ -9,6 +9,10 @@ nupkg/
 # Azure development
 .azure/
 
+# Bicep compiled ARM templates (auto-generated)
+infra/*.json
+!infra/*.parameters.json
+
 # Visual Studio Code
 .vscode
 

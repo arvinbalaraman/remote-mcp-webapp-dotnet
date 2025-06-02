@@ -4,13 +4,14 @@ using ModelContextProtocol.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add MCP server services
+// Add MCP server services with HTTP transport
 builder.Services.AddMcpServer()
+    .WithHttpTransport()
     .WithTools<MultiplicationTool>()
     .WithTools<TemperatureConverterTool>()
     .WithTools<WeatherTools>();
 
-// Add CORS for SSE support in browsers
+// Add CORS for HTTP transport support in browsers
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -36,6 +37,6 @@ app.UseCors();
 app.MapMcp();
 
 // Add a simple home page
-app.MapGet("/", () => "MCP Server on Azure App Service - Ready for use with SSE");
+app.MapGet("/status", () => "MCP Server on Azure App Service - Ready for use with HTTP transport");
 
 app.Run();

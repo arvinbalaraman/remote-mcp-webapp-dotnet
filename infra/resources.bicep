@@ -30,7 +30,13 @@ resource webApp 'Microsoft.Web/sites@2024-04-01' = {
       minTlsVersion: '1.2'
       http20Enabled: true
       alwaysOn: true
-      netFrameworkVersion: 'v6.0'
+      windowsFxVersion: 'DOTNET|9.0'
+      metadata: [
+        {
+          name: 'CURRENT_STACK'
+          value: 'dotnet'
+        }
+      ]
     }
   }
   resource appSettings 'config' = {

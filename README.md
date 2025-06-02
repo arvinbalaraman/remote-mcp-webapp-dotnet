@@ -54,9 +54,9 @@ The MCP server provides an API that follows the Model Context Protocol specifica
 
 #### Using VS Code - Copilot Agent Mode
 
-1. **Add MCP Server** from command palette and add the URL to your running server's SSE endpoint:
+1. **Add MCP Server** from command palette and add the URL to your running server's HTTP endpoint:
    ```
-   http://0.0.0.0:5000/sse
+   http://0.0.0.0:5000
    ```
 2. **List MCP Servers** from command palette and start the server
 3. In Copilot chat agent mode, enter a prompt to trigger the tool:
@@ -76,10 +76,10 @@ You can ask things like:
    npx @modelcontextprotocol/inspector
    ```
 2. CTRL+click the URL displayed by the app (e.g. http://0.0.0.0:5173/#resources)
-3. Set the transport type to `SSE`
-4. Set the URL to your running server's SSE endpoint and **Connect**:
+3. Set the transport type to `HTTP`
+4. Set the URL to your running server's HTTP endpoint and **Connect**:
    ```
-   http://0.0.0.0:5000/sse
+   http://0.0.0.0:5000
    ```
 5. **List Tools**, click on a tool, and **Run Tool**
 
@@ -110,13 +110,13 @@ You can ask things like:
 #### Using MCP Inspector
 Use the web app's URL:
 ```
-https://<webappname>.azurewebsites.net/sse
+https://<webappname>.azurewebsites.net
 ```
 
 #### Using VS Code - GitHub Copilot
 Follow the same process as with the local app, but use your App Service URL:
 ```
-https://<webappname>.azurewebsites.net/sse
+https://<webappname>.azurewebsites.net
 ```
 
 ## Clean up resources
